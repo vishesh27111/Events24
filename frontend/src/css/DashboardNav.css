@@ -1,0 +1,16 @@
+.dashboard-navbar {
+    display: flex;
+    justify-content: flex-start;
+    background-color: #333;
+    padding: 10px;
+}
+
+.dashboard-link {
+    color: white;
+    text-decoration: none;
+    padding: 10px;
+}
+
+.dashboard-link:hover {
+    background-color: #555;
+}

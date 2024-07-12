@@ -1,0 +1,153 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'Ec2'
+
+Resources:
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "EC2 Security Group"
+      GroupName: "ec-sg"
+      SecurityGroupEgress:
+        - IpProtocol: "all"
+          FromPort: 0
+          ToPort: 65535
+          CidrIp: "0.0.0.0/0"
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 3000
+          ToPort: 3000
+          CidrIp: 0.0.0.0/0
+      VpcId: vpc-00abf4d36ad819d0e
+ 
+  myEC2Instance: 
+    Type: AWS::EC2::Instance
+    Properties:
+      KeyName: test-key
+      ImageId: ami-0cd59ecaf368e5ccf
+      InstanceType: 't3.large'
+      Monitoring: false
+      SecurityGroupIds:
+        - !Ref SecurityGroup
+      BlockDeviceMappings:
+      -
+        DeviceName: "/dev/sda1"
+        Ebs:
+          Encrypted: false
+          VolumeSize: 16
+          SnapshotId: "snap-0d4808a4a367518ba"
+          VolumeType: "gp3"
+          DeleteOnTermination: true
+      HibernationOptions:
+        Configured: false
+      CpuOptions:
+        CoreCount: 1
+        ThreadsPerCore: 2
+      EnclaveOptions:
+        Enabled: false
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          sudo apt-get update -y
+          sudo apt install npm -y
+          sudo npm install -g npm@10.5.1
+          curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - 
+          sudo apt install -y nodejs 
+          sudo apt install nginx -y 
+          sudo mkdir /var/www/html/frontend
+          echo 'server {
+            listen 80;
+            listen [::]:80;
+            root /var/www/html/frontend/build;
+
+            #react app
+            location / {
+              try_files $uri /index.html;
+            }
+          }' | sudo tee /etc/nginx/conf.d/react.conf >/dev/null
+          cd /home/ubuntu
+          mkdir frontend
+          cd frontend
+          sudo git clone https://github.com/vishesh27111/cloud.git
+          cd cloud
+          sudo npm install
+          sudo npm audit fix --force
+          sudo npm run build
+          sudo cp -R build/ /var/www/html/frontend/
+          echo '
+          user www-data;
+          worker_processes auto;
+          pid /run/nginx.pid;
+          include /etc/nginx/modules-enabled/*.conf;
+
+          events {
+            worker_connections 768;
+          }
+
+          http {
+            sendfile on;
+            tcp_nopush on;
+            tcp_nodelay on;
+            keepalive_timeout 65;
+            types_hash_max_size 2048;
+
+            include /etc/nginx/mime.types;
+            default_type application/octet-stream;
+
+            ssl_protocols TLSv1 TLSv1.1 TLSv1.2 TLSv1.3; # Dropping SSLv3, ref: POODLE
+            ssl_prefer_server_ciphers on;
+
+            access_log /var/log/nginx/access.log;
+            error_log /var/log/nginx/error.log;
+
+            gzip on;
+
+            include /etc/nginx/conf.d/*.conf;
+          }' | sudo tee /etc/nginx/nginx.conf >/dev/null
+          sudo nginx -t && sudo systemctl reload nginx
+        
+          sudo npm install
+          sudo npm audit fix --force
+          sudo npm run build
+          sudo cp -R build/ /var/www/html/frontend/
+          echo '
+          user www-data;
+          worker_processes auto;
+          pid /run/nginx.pid;
+          include /etc/nginx/modules-enabled/*.conf;
+
+          events {
+            worker_connections 768;
+          }
+
+          http {
+            sendfile on;
+            tcp_nopush on;
+            tcp_nodelay on;
+            keepalive_timeout 65;
+            types_hash_max_size 2048;
+
+            include /etc/nginx/mime.types;
+            default_type application/octet-stream;
+
+            ssl_protocols TLSv1 TLSv1.1 TLSv1.2 TLSv1.3; # Dropping SSLv3, ref: POODLE
+            ssl_prefer_server_ciphers on;
+
+            access_log /var/log/nginx/access.log;
+            error_log /var/log/nginx/error.log;
+
+            gzip on;
+
+            include /etc/nginx/conf.d/*.conf;
+          }' | sudo tee /etc/nginx/nginx.conf >/dev/null
+          sudo nginx -t && sudo systemctl reload nginx
+      Tags:
+        - Key: key
+          Value: "events-ec2"

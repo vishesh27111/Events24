@@ -1,0 +1,27 @@
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #333;
+    color: white;
+    padding: 10px 20px;
+}
+
+.nav-links {
+    /* Aligns the links to the right */
+}
+
+.btn {
+    margin-left: 10px;
+    padding: 5px 15px;
+    background-color: dodgerblue;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+    text-decoration: none; /* Add this line */
+}
+
+.btn:hover {
+    background-color: deepskyblue;
+}
